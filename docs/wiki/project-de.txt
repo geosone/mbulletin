@@ -1,8 +1,10 @@
 ====== mbulletin ======
 
-Bulletinen für Mystic BBS generieren, ohne die Original-Vorlage zu verändern.
+Bulletinen für Mystic BBS generieren, umbenennen und löschen, ohne die
+Original-Vorlagen zu verändern.
 
-**Stand:** Pascal-Implementierung; Offline-Generierung ist umgesetzt.
+**Stand:** Pascal-Implementierung; Themen-Workflow (`new`, `list`, `delete`)
+ist umgesetzt.
 
 [[https://github.com/geosone/mbulletin|Quellcode und Entwicklung]]
 
@@ -10,12 +12,24 @@ Bulletinen für Mystic BBS generieren, ohne die Original-Vorlage zu verändern.
 
 ===== Technische Grundlage =====
 
-Die Implementierung verwendet Free Pascal. Eine leere Vorlage (BlankFile) wird
-aus einer Request-INI mit `BlankFile`, `OutFile` und `Report` gelesen; die Vorlage
-bleibt byte-identisch und wird nicht in das Programm eingebettet. Die als Text-Datei
-(`TEXT`) übergebene Datei wird in die Vorlage des durch `Report` genannten Berichts
-integriert und auf deren Breite ausgelegt. Schreibzugriffe sind offline und
-explizit (`--apply`). Bestehende Ziel-Dateien werden verworfen.
+Die Implementierung verwendet Free Pascal. `mbulletin.ini` liegt neben dem Tool
+und enthält je Theme einen Abschnitt mit den vier Blank-Vorlagen
+(`BlankFile`, `BlankFileC132`, `BlankFileC160`, `BlankFileAsc`) und den
+Bericht-Grenzen `Top`/`Bottom`/`Left`/`Right`. Vorlagennamen enthalten `.blank`;
+der Namensrest bestimmt die erzeugte Bulletin-Datei (`bullet1.ans`,
+`bullet1.c132.ans`, `bullet1.asc`, ...). geschrieben wird in das Verzeichnis der
+Vorlage, also das text/-Verzeichnis des Themes.
+
+`new` bekommt als einziges Argument die Textdatei; ihre erste Zeile wird der
+Bulletin-Titel, die Bericht-Grenzen des Themes bestimmen Breite und Höhe des
+Textbereichs. Alle Limit-Varianten werden gleichzeitig erzeugt, die deutschen
+Umlaute landen als CP437-Bytes in `.ans` und ausgeschrieben in `.asc`. Passt
+der Text nicht in den Bericht, bricht der Lauf vollständig ab. `list` zeigt die
+Bulletins mit den Titeln aus der Berichtzone, `delete` fragt interaktiv (J/N),
+löscht das gewählte Bulletin in allen Themes und nummeriert die folgenden
+Bulletin neu (Umbenennen erhält die mtime, Mystic zeigt sie nicht als neu).
+Schreibzugriffe sind offline; bestehende Dateien werden nie überschrieben und
+die Vorlagen bleiben byte-identisch.
 
 Die Auslieferung besteht aus einer ausführbaren Datei und README.txt: ZIP für
 Windows, tar.gz für Linux. Keine separate Manpage, kein MSI/DEB und kein

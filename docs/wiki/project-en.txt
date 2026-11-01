@@ -1,8 +1,10 @@
 ====== mbulletin ======
 
-Generate Mystic BBS bulletins without changing the original blank template.
+Generate, renumber and delete Mystic BBS bulletins without changing the
+original blank templates.
 
-**Status:** Pascal implementation; offline generation is implemented.
+**Status:** Pascal implementation; the theme workflow (`new`, `list`, `delete`)
+is implemented.
 
 [[https://github.com/geosone/mbulletin|Source and development]]
 
@@ -10,12 +12,23 @@ Generate Mystic BBS bulletins without changing the original blank template.
 
 ===== Technical basis =====
 
-Implemented in Free Pascal. A blank template (`BlankFile`) is read from a request
-INI with `BlankFile`, `OutFile` and `Report`; the template itself stays
-byte-identical and is never embedded into the program. The text file passed as
-`TEXT` is integrated into the template of the report named by `Report` and is
-fitted to that template's width. Writes are offline and explicit (`--apply`).
-Existing targets are refused.
+Implemented in Free Pascal. `mbulletin.ini` sits next to the tool and holds one
+section per theme with the four blank templates (`BlankFile`, `BlankFileC132`,
+`BlankFileC160`, `BlankFileAsc`) and the report boundaries
+`Top`/`Bottom`/`Left`/`Right`. Blank names contain `.blank`; the filename tail
+decides which bulletin file is produced (`bullet1.ans`, `bullet1.c132.ans`,
+`bullet1.asc`, ...). Bulletins are written into the directory of the referenced
+template, which is the theme text directory.
+
+`new` takes the text file as its only argument; the first line becomes the
+bulletin title and the theme report boundaries define the size of the text
+area. Every width variant is created in one run, German umlauts are stored as
+CP437 bytes in `.ans` and spelled out in `.asc`. Text that does not fit the
+report area fails the whole run. `list` shows the bulletins with the titles
+from the report area, `delete` asks interactively (J/N), removes the chosen
+bulletin in every theme and renumbers the following ones (renaming preserves
+the mtime, so Mystic does not flag them as new). Writes are offline; existing
+files are never overwritten and templates stay byte-identical.
 
 Distribution contains one executable and README.txt: ZIP for Windows, tar.gz for
 Linux. No separate manpage, MSI/DEB or system-wide PATH change.

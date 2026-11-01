@@ -9,8 +9,11 @@ packaging, global PATH updates, services or automatic production activation.
 Never print keys/passwords or commit user data. Require explicit operator approval
 for changes to a live BBS. Document actual supported formats and native tests.
 
-Bulletin generation is offline only. The blank template is never modified, a new
-bulletin file is created beside the theme text directory and every write needs an
-explicit --apply. Unknown or oversized templates are refused. The template is
-referenced by the request INI, the text arrives as a text file parameter and is
-integrated into the template fitted to the template width.
+Bulletin generation is offline only. The blank templates are never modified, the
+bulletin files land in the blank directory of each theme, and one `new` run
+creates the bulletin in every theme. The theme sections come from mbulletin.ini
+next to the tool and must define all four blanks and Top/Bottom/Left/Right.
+Unknown, invalid or oversized templates are refused. The only argument of `new`
+is the text file, whose first line is the title. `list` shows the titles from
+the report area of the .ans files, `delete` asks interactively (J/N) and
+renumbers the remaining bulletins in every theme.

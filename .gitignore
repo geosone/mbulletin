@@ -1,3 +1,2 @@
-/build/
-*.o
-*.ppu
+build/
+__pycache__/

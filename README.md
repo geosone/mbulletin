@@ -1,21 +1,25 @@
-mbulletin - Mystic BBS bulletin generator
-=======================================
+mbulletin - Mystic BBS bulletin report generator
+================================================
 
-Generates new bulletin ANSI files from a theme-owned blank template and the
-passed bulletin text. The theme template provides the layout; the text is
-integrated into it; the blank original is never modified, a new bulletin file is
-created and picked up by the BULLETIN menu script.
+mbulletin fills the report area of a theme blank template with bulletin text.
+It works per THEME: one `new` run creates the next bulletin in every theme
+listed in `mbulletin.ini`, as `<prefix><n>.ans` plus `<prefix><n>.asc` and the
+ANSI width variants. `list` shows the bulletins with their titles, `delete`
+removes a chosen bulletin and renumbers the remaining ones. The tool runs
+offline, never touches the blank templates and refuses to overwrite existing
+bulletin files.
 
-Status: Pascal implementation with native generation tests on Linux and Windows.
+Status: Pascal implementation with native generation tests on Linux and
+Windows.
 
 ## Distribution
 
 Windows releases use ZIP archives; Linux releases use tar.gz archives. Extract
-beside Mystic in `/opt/mystic` or `C:\Mystic`. No MSI, DEB, system service, global
-PATH change or machine-wide installation is planned for this small tool. Each
-archive contains exactly one native executable and README.txt, taken from
+beside Mystic in `/opt/mystic` or `C:\Mystic`. No MSI, DEB, system service,
+global PATH change or machine-wide installation is planned for this small tool.
+Each archive contains exactly one native executable and README.txt, taken from
 `packaging/README.txt`. Templates are not embedded in the program; they are
-referenced by the request INI. Do not ship script wrappers, helper DLLs or
+referenced by `mbulletin.ini`. Do not ship script wrappers, helper DLLs or
 sidecar configuration. Checksums are published beside the archive on GitHub.
 
 `.github/workflows/build.yml` builds and exercises every archive: Linux amd64,
@@ -26,43 +30,72 @@ Tagging `v*` publishes the archives and `SHA256SUMS`.
 ## Usage
 
 ```text
-mbulletin new REQUEST TEXT [--apply]
-mbulletin --self-test
+mbulletin new TEXTFILE     create the next bulletin in every theme
+mbulletin list             show the bulletins and their titles
+mbulletin delete           delete a bulletin and renumber the rest
+mbulletin --self-test      run the built-in checks
 ```
 
-`new` reads a bulletin request INI file with a single `[Bulletin]` section:
+The single argument of `new` is the TEXT file with the bulletin text. Its first
+line becomes the bulletin title; the remaining lines are the body. The INI file
+is read next to the tool: `mbulletin.ini` in the tool directory. From there the
+relative blank template paths are resolved.
+
+## mbulletin.ini
+
+One section per theme, each with the four blank template keys and the report
+area boundaries:
 
 ```ini
-[Bulletin]
-BlankFile = /srv/bbs/themes/default/text/bullet.ans
-OutFile = /srv/bbs/themes/default/text/bullet3.ans
-Report = BULLET1
+[default]
+BlankFile    = blank/default/bullet.blank.ans
+BlankFileC132 = blank/default/bullet.blank.c132.ans
+BlankFileC160 = blank/default/bullet.blank.c160.ans
+BlankFileAsc = blank/default/bullet.blank.asc
+Top = 6
+Bottom = 18
+Left = 2
+Right = 2
+
+[dbp_de]
+...
 ```
 
-`BlankFile` references the theme-owned template that provides the layout; the
-template itself stays byte-identical and is never embedded into the program.
-`OutFile` names the new bulletin file that receives the integrated text.
-`Report` names the bulletin (for example `BULLET1`) the text is integrated into;
-each template belongs to a different bulletin.
+- Every blank template name must contain `.blank`; its filename tail
+  (`.ans`, `.c132.ans`, `.c160.ans`, `.asc`) decides which bulletin file is
+  produced (`bullet1.ans`, `bullet1.c132.ans`, `bullet1.asc`, ...). The report
+  is written into the directory of the blank template, which therefore must be
+  the theme text directory.
+- `Top`/`Bottom` are the first and last template lines of the report area; only
+  these lines are replaced with the title plus the wrapped text. Everything
+  outside stays byte-identical and the template itself is never modified.
+- `Left`/`Right` are the column margins inside the report area. The text width
+  is the variant width minus both margins (base = 80 columns, `.c132` = 132,
+  `.c160` = 160).
+- Filling order: first line of the TXT is the title, then the body; silent
+  hard-wrapping continues under lines, leftover area lines stay blank.
+- All four template keys are required for every theme. If the text does not
+  fit the report area, the whole run fails with an error and writes nothing.
+- German umlauts are written as CP437 bytes in `.ans` and spelled out
+  (`ae`, `oe`, `ue`, `ss`) in the `.asc` fallback.
 
-The bulletin text is passed as a text file path (`TEXT`) and is integrated into
-the template. Text lines are fitted to the template width; the width is taken
-from the template name (`...c132.<ext>` means a 132 column template, otherwise
-the default of 80 columns applies). `Report` names the bulletin the text is
-integrated into; each template belongs to a different bulletin.
+## Titles and the BULLETIN menu script
 
-Without `--apply` the tool only plans and writes nothing. With `--apply` the tool
-refuses an existing target and writes the new bulletin file.
-
-The future .NET mysticd daemon and installer components call this tool through
-the same offline policy.
+The first report-area line is what Mystic's bulletin menu script reads as the
+title; `list` and `delete` therefore show the titles coming straight from the
+created `.ans` report area (display codes stripped). Because bulletins across
+themes stay in a strict 1..n order, `delete` removes the chosen number in every
+theme and renumbers the following bulletins (1,2,3,4, delete 2 -> 3 becomes 2,
+4 becomes 3). Renaming preserves the file mtime, so the news detection of the
+menu script does not mark moved bulletins as new.
 
 ## Requirements
 
 - Mystic 1.12 installation with theme text files (for example
   `themes/default/text`).
-- ANSI bulletin template (the blank file) in printable or ANSI form.
-- Bulletin text file (TXT) that is integrated into the template.
+- One blank template per theme and variant (`*.blank.ans`, `*.blank.c132.ans`
+  etc.) that already contains the finished artwork with an empty report area.
+- Bulletin text file (TXT) whose first line is the title.
 
 ## Repository boundary
 
@@ -73,10 +106,11 @@ changed without explicit operator approval. License: GPL-3.0-only.
 
 ## Current source build
 
-`make test` builds the single executable and runs the hash self-tests.
+`make test` builds the single executable and runs the native self-tests
+(SHA-256 vectors plus the naming, line, wrapping, umlaut and list helpers).
 
-`python3 tests/test_generator.py build/mbulletin` checks planning, generation,
-text integration and overwrite refusal on temporary fixtures.
+`python3 tests/test_generator.py build/mbulletin` checks the whole
+new/list/delete workflow on temporary fixtures, including renumbering and
+theme synchronisation errors.
 
-`mbulletin new REQUEST TEXT [--apply]` validates the request and writes the new
-bulletin file. `mbulletin --self-test` verifies the SHA-256 primitives.
+`mbulletin --self-test` verifies the internal helpers.
