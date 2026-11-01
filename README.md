@@ -124,3 +124,11 @@ new/list/delete workflow on temporary fixtures, including renumbering and
 theme synchronisation errors.
 
 `mbulletin --self-test` verifies the internal helpers.
+
+## Wide ASCII support
+
+The optional pair BlankFileC132Asc / BlankFileC160Asc adds .c132.asc and
+.c160.asc output. Use Coord1C132Asc / Coord2C132Asc and Coord1C160Asc /
+Coord2C160Asc for their report corners. Both wide ASCII variants must be
+configured together. Existing four-variant INIs remain valid. Each variant
+wraps against its own report width and ASCII variants transliterate umlauts.

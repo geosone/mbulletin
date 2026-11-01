@@ -59,13 +59,13 @@ const
     { ... and as bare Latin-1/CP850 bytes, also in the same order. }
     Latin1Umlauts: array[0..6] of Byte = ($E4, $C4, $F6, $D6, $FC, $DC, $DF);
 
-    VariantKeys: array[0..3] of string = ('BlankFile', 'BlankFileC132', 'BlankFileC160', 'BlankFileAsc');
-    VariantTails: array[0..3] of string = ('.ans', '.c132.ans', '.c160.ans', '.asc');
+    VariantKeys: array[0..5] of string = ('BlankFile', 'BlankFileC132', 'BlankFileC160', 'BlankFileAsc', 'BlankFileC132Asc', 'BlankFileC160Asc');
+    VariantTails: array[0..5] of string = ('.ans', '.c132.ans', '.c160.ans', '.asc', '.c132.asc', '.c160.asc');
 
     { coordinate keys follow the BlankFile keys: plain Coord1/Coord2 belong to
       the base .ans template, the suffixed ones to the other variants }
-    Coord1Keys: array[0..3] of string = ('Coord1', 'Coord1C132', 'Coord1C160', 'Coord1Asc');
-    Coord2Keys: array[0..3] of string = ('Coord2', 'Coord2C132', 'Coord2C160', 'Coord2Asc');
+    Coord1Keys: array[0..5] of string = ('Coord1', 'Coord1C132', 'Coord1C160', 'Coord1Asc', 'Coord1C132Asc', 'Coord1C160Asc');
+    Coord2Keys: array[0..5] of string = ('Coord2', 'Coord2C132', 'Coord2C160', 'Coord2Asc', 'Coord2C132Asc', 'Coord2C160Asc');
 
 { --------------------------------------------------------------------- }
 { Path helpers                                                          }
@@ -403,9 +403,9 @@ end;
 
 function TailWidth(const Tail: string): Integer;
 begin
-    if Copy(Tail, 1, Length(VariantTails[1])) = VariantTails[1] then
+    if Copy(Tail, 1, 6) = '.c132.' then
         Result := 132
-    else if Copy(Tail, 1, Length(VariantTails[2])) = VariantTails[2] then
+    else if Copy(Tail, 1, 6) = '.c160.' then
         Result := 160
     else
         Result := BaseWidth;
@@ -549,6 +549,14 @@ begin
             SetLength(Theme.Variants, Length(VariantKeys));
             for K := 0 to Length(VariantKeys) - 1 do begin
                 BlankPath := Ini.ReadString(Section, VariantKeys[K], '');
+                { Older INIs define four variants. Wide ASCII is an optional
+                  pair; once configured both variants must be complete. }
+                if (K = 4) and (BlankPath = '') then begin
+                    if Ini.ReadString(Section, VariantKeys[5], '') <> '' then
+                        raise Exception.Create('Wide ASCII requires both 132 and 160 templates.');
+                    SetLength(Theme.Variants, 4);
+                    Break;
+                end;
                 if BlankPath = '' then
                     raise Exception.Create('Theme "' + Section + '" is missing the ' +
                         VariantKeys[K] + ' key.');
@@ -718,7 +726,7 @@ begin
                     'Bottom (' + IntToStr(Theme.Variants[K].Bottom) + ' lines): ' +
                     Theme.Variants[K].BlankPath);
             VariantText := Copy(TextData, 0, Length(TextData));
-            TranslateGerman(VariantText, VariantKeys[3] = Theme.Variants[K].KeyName);
+            TranslateGerman(VariantText, Copy(Theme.Variants[K].Tail, Length(Theme.Variants[K].Tail) - 3, 4) = '.asc');
             VariantLines := SplitLines(VariantText);
 
             { fit every text line (title first) into the Coord1..Coord2 report

@@ -29,6 +29,12 @@ Coord2C160    = 156,18
 BlankFileAsc  = themes/default/text/bullet.blank.asc
 Coord1Asc     = 3,5
 Coord2Asc     = 76,18
+BlankFileC132Asc = themes/default/text/bullet.blank.c132.asc
+Coord1C132Asc = 3,5
+Coord2C132Asc = 128,18
+BlankFileC160Asc = themes/default/text/bullet.blank.c160.asc
+Coord1C160Asc = 3,5
+Coord2C160Asc = 156,18
 
 [dbp_de]
 BlankFile     = themes/dbp_de/text/bullet.blank.ans
@@ -43,3 +49,9 @@ Coord2C160    = 156,18
 BlankFileAsc  = themes/dbp_de/text/bullet.blank.asc
 Coord1Asc     = 3,5
 Coord2Asc     = 76,18
+BlankFileC132Asc = themes/dbp_de/text/bullet.blank.c132.asc
+Coord1C132Asc = 3,5
+Coord2C132Asc = 128,18
+BlankFileC160Asc = themes/dbp_de/text/bullet.blank.c160.asc
+Coord1C160Asc = 3,5
+Coord2C160Asc = 156,18

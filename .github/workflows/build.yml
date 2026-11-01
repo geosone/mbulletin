@@ -46,7 +46,8 @@ jobs:
             apt-get update > /dev/null
             apt-get install -y --no-install-recommends libc6-dev fp-compiler fp-units-fcl fp-units-base make python3 > /dev/null
             ./runtime/mbulletin --self-test
-            python3 tests/test_generator.py ./runtime/mbulletin'
+            python3 tests/test_generator.py ./runtime/mbulletin
+            python3 tests/test_wide_ascii.py ./runtime/mbulletin'
       - uses: actions/upload-artifact@v4
         with:
           name: mbulletin-linux-${{ matrix.target.arch }}
@@ -80,6 +81,7 @@ jobs:
         run: |
           ./packaging/Build-Windows.ps1 -LazarusDirectory "$env:RUNNER_TEMP/lazarus" -OutputDirectory "$env:RUNNER_TEMP/native" -Architecture '${{ matrix.target.arch }}'
           python tests/test_generator.py "$env:RUNNER_TEMP/native/mbulletin.exe"
+          python tests/test_wide_ascii.py "$env:RUNNER_TEMP/native/mbulletin.exe"
           if ($LASTEXITCODE) { throw 'Native generation regression test failed.' }
       - name: Create and exercise portable archive
         shell: pwsh
