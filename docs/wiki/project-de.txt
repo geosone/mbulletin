@@ -1,0 +1,22 @@
+====== mbulletin ======
+
+Bulletinen für Mystic BBS generieren, ohne die Original-Vorlage zu verändern.
+
+**Stand:** Pascal-Implementierung; Offline-Generierung ist umgesetzt.
+
+[[https://github.com/geosone/mbulletin|Quellcode und Entwicklung]]
+
+[[:de:projects:mbulletin|Deutsch]] · [[:en:projects:mbulletin|English]]
+
+===== Technische Grundlage =====
+
+Die Implementierung verwendet Free Pascal. Eine leere Vorlage (BlankFile) wird
+ausgehend von einer angegebenen Ziel-Datei kopiert; die Vorlage bleibt byte-
+identisch. Schreibzugriffe sind offline und explizit (`--apply`). Bestehende
+Ziel-Dateien werden verworfen.
+
+Die Auslieferung besteht aus einer ausführbaren Datei und README.txt: ZIP für
+Windows, tar.gz für Linux. Keine separate Manpage, kein MSI/DEB und kein
+systemweiter PATH-Eintrag.
+
+[[:de:projects:start|Zur Projektübersicht]]

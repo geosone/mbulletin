@@ -1,0 +1,20 @@
+====== mbulletin ======
+
+Generate Mystic BBS bulletins without changing the original blank template.
+
+**Status:** Pascal implementation; offline generation is implemented.
+
+[[https://github.com/geosone/mbulletin|Source and development]]
+
+[[:en:projects:mbulletin|English]] · [[:de:projects:mbulletin|German]]
+
+===== Technical basis =====
+
+Implemented in Free Pascal. A blank template (BlankFile) is copied to a target
+file while the template itself stays byte-identical. Writes are offline and
+explicit (`--apply`). Existing targets are refused.
+
+Distribution contains one executable and README.txt: ZIP for Windows, tar.gz for
+Linux. No separate manpage, MSI/DEB or system-wide PATH change.
+
+[[:en:projects:start|Project overview]]
