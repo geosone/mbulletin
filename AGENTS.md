@@ -11,4 +11,6 @@ for changes to a live BBS. Document actual supported formats and native tests.
 
 Bulletin generation is offline only. The blank template is never modified, a new
 bulletin file is created beside the theme text directory and every write needs an
-explicit --apply. Unknown or oversized templates are refused.
+explicit --apply. Unknown or oversized templates are refused. The template is
+referenced by the request INI, the text arrives as a text file parameter and is
+integrated into the template fitted to the template width.

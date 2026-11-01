@@ -11,9 +11,11 @@ Bulletinen für Mystic BBS generieren, ohne die Original-Vorlage zu verändern.
 ===== Technische Grundlage =====
 
 Die Implementierung verwendet Free Pascal. Eine leere Vorlage (BlankFile) wird
-aus einer Request-INI mit `BlankFile` und `OutFile` gelesen; die Vorlage bleibt
-byte-identisch. Schreibzugriffe sind offline und explizit (`--apply`). Bestehende
-Ziel-Dateien werden verworfen.
+aus einer Request-INI mit `BlankFile`, `OutFile` und `Report` gelesen; die Vorlage
+bleibt byte-identisch und wird nicht in das Programm eingebettet. Die als Text-Datei
+(`TEXT`) übergebene Datei wird in die Vorlage des durch `Report` genannten Berichts
+integriert und auf deren Breite ausgelegt. Schreibzugriffe sind offline und
+explizit (`--apply`). Bestehende Ziel-Dateien werden verworfen.
 
 Die Auslieferung besteht aus einer ausführbaren Datei und README.txt: ZIP für
 Windows, tar.gz für Linux. Keine separate Manpage, kein MSI/DEB und kein
