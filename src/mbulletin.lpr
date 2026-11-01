@@ -5,7 +5,7 @@ program mbulletin;
 uses Classes, SysUtils, IniFiles, msha256;
 
 const
-    Version = '0.2.0';
+    Version = '0.3.0';
     IniName = 'mbulletin.ini';
     Prefix = 'bullet';
     BaseWidth = 80;

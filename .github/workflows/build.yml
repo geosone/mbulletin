@@ -18,7 +18,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  MBBULLETIN_VERSION: 0.2.0
+  MBBULLETIN_VERSION: 0.3.0
 
 jobs:
   linux-build:
