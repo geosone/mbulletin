@@ -12,6 +12,7 @@ RUN make \
  && mkdir -p /portable /output \
  && install -m 0755 build/mbulletin /portable/mbulletin \
  && install -m 0644 packaging/README.txt /portable/README.txt \
- && tar -czf "/output/mbulletin-${VERSION}-linux-$(dpkg --print-architecture).tar.gz" -C /portable mbulletin README.txt
+ && install -m 0644 packaging/mbulletin.ini.example /portable/mbulletin.ini.example \
+ && tar -czf "/output/mbulletin-${VERSION}-linux-$(dpkg --print-architecture).tar.gz" -C /portable mbulletin README.txt mbulletin.ini.example
 FROM scratch
 COPY --from=builder /output/ /

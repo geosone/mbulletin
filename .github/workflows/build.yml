@@ -40,7 +40,8 @@ jobs:
         run: |
           mkdir runtime
           tar -xzf "out/mbulletin-$MBBULLETIN_VERSION-linux-${{ matrix.target.arch }}.tar.gz" -C runtime
-          test "$(find runtime -maxdepth 1 -type f | wc -l)" = 2
+          test "$(find runtime -maxdepth 1 -type f | wc -l)" = 3
+          test -f runtime/mbulletin.ini.example
           docker run --rm --platform '${{ matrix.target.platform }}' -v "$PWD:/work:ro" -w /work debian:bookworm-slim sh -ec '
             apt-get update > /dev/null
             apt-get install -y --no-install-recommends libc6-dev fp-compiler fp-units-fcl fp-units-base make python3 > /dev/null
@@ -88,11 +89,12 @@ jobs:
           $null = New-Item -ItemType Directory -Path $archive -Force
           Copy-Item (Join-Path $native 'mbulletin.exe') $archive
           Copy-Item (Join-Path $PWD 'packaging/README.txt') (Join-Path $archive 'README.txt')
+          Copy-Item (Join-Path $PWD 'packaging/mbulletin.ini.example') (Join-Path $archive 'mbulletin.ini.example')
           $zip = Join-Path $archive "mbulletin-$env:MBBULLETIN_VERSION-windows-${{ matrix.target.arch }}.zip"
-          Compress-Archive -Path (Join-Path $archive 'mbulletin.exe'), (Join-Path $archive 'README.txt') -DestinationPath $zip
+          Compress-Archive -Path (Join-Path $archive 'mbulletin.exe'), (Join-Path $archive 'README.txt'), (Join-Path $archive 'mbulletin.ini.example') -DestinationPath $zip
           $extracted = Join-Path $env:RUNNER_TEMP 'extracted'
           Expand-Archive -LiteralPath $zip -DestinationPath $extracted
-          if (@(Get-ChildItem -LiteralPath $extracted -File).Count -ne 2) { throw 'Archive must contain exactly two files.' }
+          if (@(Get-ChildItem -LiteralPath $extracted -File).Count -ne 3) { throw 'Archive must contain exactly three files.' }
           & (Join-Path $extracted 'mbulletin.exe') --self-test
           if ($LASTEXITCODE) { throw 'Extracted archive self-test failed.' }
           $hash = (Get-FileHash -LiteralPath $zip).Hash.ToLowerInvariant()

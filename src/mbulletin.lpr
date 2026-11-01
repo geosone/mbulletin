@@ -292,8 +292,7 @@ begin
 end;
 
 { Remove ANSI escape sequences, pipe codes |XX and control characters. }
-function StripDisplayCodes(const Line: string): string;
-var
+function StripDisplayCodes(const Line: string): string;var
     I: Integer;
     C: Char;
 begin
@@ -337,6 +336,45 @@ begin
     while (B >= A) and (S[B] = ' ') do
         Dec(B);
     Result := Copy(S, A, B - A + 1);
+end;
+
+{ Shifting template lines down breaks absolute row addressing: when a line
+  starts with an ESC[r;...H/f/d cursor position the row value is incremented
+  by Delta so the rest of the template keeps its place. Lines without a
+  leading cursor position just scroll along. }
+function ShiftCursorPosition(const Line: string; Delta: Integer): string;
+var
+    I, J, Row, Terminated: Integer;
+    K: Char;
+begin
+    Result := Line;
+    if (Delta = 0) or (Length(Line) < 4) then
+        Exit;
+    if (Line[1] <> #27) or (Line[2] <> '[') then
+        Exit;
+    I := 3;
+    while (I <= Length(Line)) and (Line[I] in ['0'..'9']) do
+        Inc(I);
+    if I = 3 then
+        Exit;
+    Row := StrToIntDef(Copy(Line, 3, I - 3), -1);
+    if Row < 0 then
+        Exit;
+    { the row must be the first parameter of a position sequence (H, f or d) }
+    J := I;
+    if (J <= Length(Line)) and (Line[J] = ';') then begin
+        while (J <= Length(Line)) and
+              (Line[J] in ['0'..'9', ';', '.', ':', '?', ' ', '"']) do
+            Inc(J);
+    end;
+    if J > Length(Line) then
+        Exit;
+    K := Line[J];
+    if not (K in ['H', 'f', 'd']) then
+        Exit;
+    Terminated := J;
+    Result := #27 + '[' + IntToStr(Row + Delta) + Copy(Line, I, Terminated - I + 1) +
+        Copy(Line, Terminated + 1, MaxInt);
 end;
 
 { --------------------------------------------------------------------- }
@@ -540,11 +578,24 @@ end;
 
 procedure CheckThemesInSync(const Themes: TThemeArr);
 var
-    I, First, Count: Integer;
+    I, N, First, Count: Integer;
 begin
-    First := ThemeMaxNumber(Themes[0]);
-    for I := 1 to High(Themes) do begin
+    { bulletins must form the strict 1..count run in every theme }
+    First := -1;
+    for I := 0 to High(Themes) do begin
         Count := ThemeMaxNumber(Themes[I]);
+        N := Count + 1;
+        while N <= MaxBulletins do begin
+            if ThemeNumberPresent(Themes[I], N) then
+                raise Exception.Create('Theme "' + Themes[I].Name +
+                    '" has extra bulletin files above ' + IntToStr(Count) +
+                    ' (bulletin ' + IntToStr(N) + '); the themes are out of ' +
+                    'sync. Bulletins must form the 1..' + IntToStr(Count) +
+                    ' run; fix this manually first.');
+            Inc(N);
+        end;
+        if First < 0 then
+            First := Count;
         if Count <> First then
             raise Exception.Create('Themes are out of sync: "' + Themes[0].Name +
                 '" has ' + IntToStr(First) + ' bulletins, "' + Themes[I].Name +
@@ -582,7 +633,7 @@ procedure NewBulletin(const TextPath: string);
 var
     Themes: TThemeArr;
     Theme: TTheme;
-    I, K, N, NextNumber, Height, ChunkIndex, ReportIndex: Integer;
+    I, K, N, NextNumber, Height, ChunkIndex: Integer;
     TextData, VariantText, BlankData, OutData: TBytes;
     BlankLines, TextLines, VariantLines: TLines;
     Wrapped, ReportLines: TStringArr;
@@ -622,22 +673,16 @@ begin
             TranslateGerman(VariantText, VariantKeys[3] = Theme.Variants[K].KeyName);
             VariantLines := SplitLines(VariantText);
 
-            { fit every text line (title first) into the report area }
+            { fit every text line (title first) into the report area; if the
+              text needs more lines than the area offers the bulletin grows
+              and the remaining template lines shift down (they scroll along
+              in Mystic, absolute cursor rows are renumbered) }
             ReportLines := nil;
-            ReportIndex := 0;
             for ChunkIndex := 0 to High(VariantLines.Values) do begin
                 Wrapped := WrapLine(VariantLines.Values[ChunkIndex],
                     Theme.Variants[K].Width - Theme.LeftMargin - Theme.RightMargin);
-                for N := 0 to High(Wrapped) do begin
-                    if ReportIndex >= Height then
-                        raise Exception.Create('Theme "' + Theme.Name + '", ' +
-                            Theme.Variants[K].Tail + ': text does not fit the report ' +
-                            'area (Top=' + IntToStr(Theme.Top) + ', Bottom=' +
-                            IntToStr(Theme.Bottom) + ', available ' +
-                            IntToStr(Height) + ' lines).');
+                for N := 0 to High(Wrapped) do
                     AppendLine(ReportLines, StringOfChar(' ', Theme.LeftMargin) + Wrapped[N]);
-                    Inc(ReportIndex);
-                end;
             end;
             while Length(ReportLines) < Height do
                 AppendLine(ReportLines, StringOfChar(' ', Theme.LeftMargin));
@@ -648,8 +693,13 @@ begin
                 AppendLine(Wrapped, BlankLines.Values[N - 1]);
             for N := 0 to High(ReportLines) do
                 AppendLine(Wrapped, ReportLines[N]);
-            for N := Theme.Bottom + 1 to Length(BlankLines.Values) do
-                AppendLine(Wrapped, BlankLines.Values[N - 1]);
+            for N := Theme.Bottom + 1 to Length(BlankLines.Values) do begin
+                if Length(ReportLines) > Height then
+                    AppendLine(Wrapped, ShiftCursorPosition(BlankLines.Values[N - 1],
+                        Length(ReportLines) - Height))
+                else
+                    AppendLine(Wrapped, BlankLines.Values[N - 1]);
+            end;
 
             OutLines.Values := Wrapped;
             OutLines.TrailingNewline := BlankLines.TrailingNewline;

@@ -73,11 +73,18 @@ Right = 2
   is the variant width minus both margins (base = 80 columns, `.c132` = 132,
   `.c160` = 160).
 - Filling order: first line of the TXT is the title, then the body; silent
-  hard-wrapping continues under lines, leftover area lines stay blank.
-- All four template keys are required for every theme. If the text does not
-  fit the report area, the whole run fails with an error and writes nothing.
+  hard-wrapping continues under lines.
+- The report may overflow the area: Mystic scrolls the extra lines of a
+  bulletin. When the text needs more lines than `Top..Bottom` offers, the
+  remaining template lines shift down; if a shifted line starts with an
+  absolute ANSI cursor position (`ESC[r;cH`, `ESC[rf`, `ESC[rd`) the row
+  number is renumbered so nothing overlaps.
+- All four template keys are required for every theme.
 - German umlauts are written as CP437 bytes in `.ans` and spelled out
   (`ae`, `oe`, `ue`, `ss`) in the `.asc` fallback.
+- `mbulletin.ini.example` (a ready sample shipped in the archives) can be
+  renamed to `mbulletin.ini` and adjusted; it is never overwritten by the
+  tool.
 
 ## Titles and the BULLETIN menu script
 

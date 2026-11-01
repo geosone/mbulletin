@@ -49,7 +49,7 @@ def make_blank(path, code):
 
 THEME_CODES = {'default': 'd', 'dbp_de': 'z'}
 
-with tempfile.TemporaryDirectory(prefix='mbulletin-test-', delete=False) as directory:
+with tempfile.TemporaryDirectory(prefix='mbulletin-test-') as directory:
     root = pathlib.Path(directory)
     shutil.copy(exe, root / 'mbulletin')
     (root / 'mbulletin.ini').write_text(ini_text())
@@ -57,6 +57,8 @@ with tempfile.TemporaryDirectory(prefix='mbulletin-test-', delete=False) as dire
         for template in ('bullet.blank.ans', 'bullet.blank.c132.ans',
                          'bullet.blank.c160.ans', 'bullet.blank.asc'):
             make_blank(root / 'blank' / theme / template, THEME_CODES[theme])
+    (root / 'blank' / 'dbp_de' / 'bullet.blank.c132.ans').write_bytes((
+        '\r\n'.join(['KEEPz0', 'A1', 'A2', 'A3', '\x1b[5;1HFOOTz0']) + '\r\n').encode())
 
     # --- new: one TXT argument builds a bulletin in every theme and width ----
     text = root / 'one.txt'
@@ -141,13 +143,33 @@ with tempfile.TemporaryDirectory(prefix='mbulletin-test-', delete=False) as dire
     assert '2: VIER' in out
     assert '3: VIER' not in out
 
-    # --- themes with diverging bulletin counts are refused -------------------
-    (root / 'blank' / 'default' / 'bullet3.ans').write_bytes(b'Fake\r\n')
+    # --- scrolled bulletin: text longer than the report area extends it -----
+    text = root / 'wide.txt'
+    text.write_bytes(T * 260 + b'\r\nMahlzeit\r\nbye\r\n')
     code, out, err = run(root, ['new', str(text)])
-    assert code != 0 and 'out of sync' in out + err
+    assert code == 0, out + err
+    # default c132 (130 text columns): two title lines + two body lines beat
+    # the three area rows, so the footer shifts down one line
+    rows = (root / 'blank' / 'default' / 'bullet3.c132.ans').read_bytes().split(b'\r\n')
+    assert rows == [b'KEEPd0', b' ' + T * 130, b' ' + T * 130, b' Mahlzeit',
+                    b' bye', b'FOOTd0', b'']
+    # the dbp_de c132 footer starts with an absolute ANSI cursor position and
+    # its row is renumbered while the bulletin grows
+    rows = (root / 'blank' / 'dbp_de' / 'bullet3.c132.ans').read_bytes().split(b'\r\n')
+    assert rows == [b'KEEPz0', T * 130, T * 130, b'Mahlzeit',
+                    b'bye', b'\x1b[6;1HFOOTz0', b'']
+    code, out, err = run(root, ['new', str(text)])
+    assert code == 0, out + err
+    rows = (root / 'blank' / 'default' / 'bullet4.c132.ans').read_bytes().split(b'\r\n')
+    assert rows[1] == b' ' + T * 130
+
+    # --- themes with diverging bulletin counts are refused -------------------
+    (root / 'blank' / 'default' / 'bullet6.ans').write_bytes(b'Fake\r\n')
+    code, out, err = run(root, ['new', str(text)])
+    assert code != 0 and 'out of sync' in out + err, (code, out + err)
     code, out, err = run(root, ['delete'], stdin=b'3\nj\n')
     assert code != 0 and 'out of sync' in out + err
-    (root / 'blank' / 'default' / 'bullet3.ans').unlink()
+    (root / 'blank' / 'default' / 'bullet6.ans').unlink()
 
     # --- new takes exactly one argument; missing files fail cleanly ----------
     code, out, err = run(root, ['new', str(text), 'extra'])

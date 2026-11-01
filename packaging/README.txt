@@ -45,9 +45,12 @@ directory. Paths are relative to the tool directory.
 title (first TXT line) plus the wrapped text replace exactly these lines,
 everything outside stays byte-identical. `Left`/`Right` are the column margins;
 the text width is the variant width minus both margins (base 80, `.c132` 132,
-`.c160` 160). Text that does not fit the report area fails the whole run with
-an error, so no half-written themes. German umlauts are stored as CP437 bytes
-in `.ans` and spelled out (ae, oe, ue, ss) in the `.asc` fallback.
+`.c160` 160). Text that needs more lines than the area offers extends the
+bulletin: the remaining template lines shift down, absolute ANSI cursor rows
+are renumbered and Mystic scrolls through the extra lines. German umlauts are
+stored as CP437 bytes in `.ans` and spelled out (ae, oe, ue, ss) in the `.asc`
+fallback. A ready `mbulletin.ini.example` ships in the archive; rename it to
+`mbulletin.ini` and adjust the paths.
 
 `delete` confirms with J/N, then renames the following bulletins in every
 theme (1,2,3,4, delete 2 -> 3 becomes 2, 4 becomes 3); renaming preserves the

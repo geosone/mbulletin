@@ -1,0 +1,32 @@
+; mbulletin.ini sample - shipped beside mbulletin and read from the tool
+; directory. One section per theme. Rename this file to mbulletin.ini (or copy
+; it) and adjust the paths to your Mystic installation; point the Blank keys at
+; the theme text directories and make sure every referenced blank template
+; exists. mbulletin never overwrites this file.
+;
+; Blank template names must contain ".blank"; the filename tail (".ans",
+; ".c132.ans", ".c160.ans", ".asc") decides which bulletin file is produced
+; (bullet1.ans, bullet1.c132.ans, bullet1.asc, ...). The bulletin is written
+; into the same directory as the referenced blank template, so the blank
+; directory must be the theme text directory. Relative paths are resolved
+; against the directory that contains mbulletin.ini / the tool.
+
+[default]
+BlankFile     = themes/default/text/bullet.blank.ans
+BlankFileC132 = themes/default/text/bullet.blank.c132.ans
+BlankFileC160 = themes/default/text/bullet.blank.c160.ans
+BlankFileAsc  = themes/default/text/bullet.blank.asc
+Top = 4
+Bottom = 18
+Left = 2
+Right = 2
+
+[dbp_de]
+BlankFile     = themes/dbp_de/text/bullet.blank.ans
+BlankFileC132 = themes/dbp_de/text/bullet.blank.c132.ans
+BlankFileC160 = themes/dbp_de/text/bullet.blank.c160.ans
+BlankFileAsc  = themes/dbp_de/text/bullet.blank.asc
+Top = 4
+Bottom = 18
+Left = 2
+Right = 2
