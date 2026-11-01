@@ -20,30 +20,36 @@ archive on GitHub.
 `.github/workflows/build.yml` builds and exercises every archive: Linux amd64,
 arm64 and armhf through buildx/QEMU in Debian bookworm, Windows x86/x64 with a
 pinned Lazarus/FPC, including the PE machine check and the generation tests.
-Tagging `v*` publishes the archives and `SHA256SUMS`. Generation tests run on
-qualified machines and need a real theme text fixture; the native self-test only
-covers the hash primitives.
+Tagging `v*` publishes the archives and `SHA256SUMS`.
+
+## Usage
+
+```text
+mbulletin new REQUEST [--apply]
+mbulletin --self-test
+```
+
+`new` reads a bulletin request INI file with a single `[Bulletin]` section:
+
+```ini
+[Bulletin]
+BlankFile = /srv/bbs/themes/default/text/bullet.ans
+OutFile = /srv/bbs/themes/default/text/bullet3.ans
+```
+
+`BlankFile` references the theme-owned blank template; `OutFile` names the new
+bulletin file that receives the integrated text. Without `--apply` the tool only
+plans and writes nothing. With `--apply` the tool refuses an existing target and
+writes the new bulletin file; the blank template stays byte-identical.
+
+The future .NET mysticd daemon and installer components call this tool through
+the same offline policy.
 
 ## Requirements
 
 - Mystic 1.12 installation with theme text files (for example
   `themes/default/text`).
 - ANSI bulletin template (the blank file) in printable or ANSI form.
-
-## Usage
-
-```text
-mbulletin new BLANKFILE OUTFILE [--apply]
-mbulletin --self-test
-```
-
-`new` reads the blank template and creates a new bulletin file from it. Without
-`--apply` the tool prints the plan and changes nothing. With `--apply` the tool
-refuses an existing target, writes the new bulletin file and keeps the blank
-template byte-identical.
-
-The future .NET mysticd daemon and installer components call this tool through
-the same offline policy.
 
 ## Repository boundary
 
@@ -59,5 +65,5 @@ changed without explicit operator approval. License: GPL-3.0-only.
 `python3 tests/test_generator.py build/mbulletin` checks planning, generation,
 blank preservation and overwrite refusal on temporary fixtures.
 
-`mbulletin new BLANKFILE OUTFILE [--apply]` validates the blank, plans or writes
-the new bulletin file. `mbulletin --self-test` verifies the SHA-256 primitives.
+`mbulletin new REQUEST [--apply]` validates the request and writes the new
+bulletin file. `mbulletin --self-test` verifies the SHA-256 primitives.

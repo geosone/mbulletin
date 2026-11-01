@@ -2,16 +2,17 @@ program mbulletin;
 
 {$mode objfpc}{$H+}
 
-uses Classes, SysUtils, msha256;
+uses Classes, SysUtils, IniFiles, msha256;
 
 const
     Version = '0.1.0';
+    Section = 'Bulletin';
     MaxBulletinSize = 1048576;
 
 procedure Usage;
 begin
     Writeln('mbulletin 0.1 - Mystic BBS bulletin generator');
-    Writeln('  mbulletin new BLANKFILE OUTFILE [--apply]');
+    Writeln('  mbulletin new REQUEST [--apply]');
     Writeln('  mbulletin --self-test');
 end;
 
@@ -65,12 +66,19 @@ begin
         raise Exception.Create('Cannot create the new bulletin file: ' + Path);
 end;
 
-procedure NewBulletin(const BlankFile: string; const OutFile: string; Apply: Boolean);
+procedure NewBulletin(const Request: string; Apply: Boolean);
 var
+    Ini: TIniFile;
+    BlankFile, OutFile: string;
     Blank: TBytes;
 begin
+    Ini := TIniFile.Create(Request);
+    BlankFile := Ini.ReadString(SECTION, 'BlankFile', '');
+    OutFile := Ini.ReadString(SECTION, 'OutFile', '');
     if BlankFile = '' then
-        raise Exception.Create('Usage: mbulletin new BLANKFILE OUTFILE [--apply].');
+        raise Exception.Create('Bulletin request is missing the ' + SECTION + ' BlankFile key.');
+    if OutFile = '' then
+        raise Exception.Create('Bulletin request is missing the ' + SECTION + ' OutFile key.');
     Blank := ReadFileBytes(BlankFile);
     if Length(Blank) = 0 then
         raise Exception.Create('Bulletin blank is empty: ' + BlankFile);
@@ -96,12 +104,11 @@ begin
             ExitCode := 1;
         end;
     end
-    else if (LowerCase(ParamStr(1)) = 'new') and ((ParamCount = 3) or ((ParamCount = 4) and (ParamStr(4) = '--apply'))) then begin
-        NewBulletin(ParamStr(2), ParamStr(3), (ParamCount = 4) and (ParamStr(4) = '--apply'));
+    else if (LowerCase(ParamStr(1)) = 'new') and ((ParamCount = 2) or ((ParamCount = 3) and (ParamStr(3) = '--apply'))) then begin
+        NewBulletin(ParamStr(2), (ParamCount = 3) and (ParamStr(3) = '--apply'));
     end
     else begin
         Usage;
         ExitCode := 1;
     end;
 end.
-

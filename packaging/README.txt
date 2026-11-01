@@ -13,12 +13,18 @@ Requirements
 
 Usage
 -----
-  mbulletin new BLANKFILE OUTFILE [--apply]
+  mbulletin new REQUEST [--apply]
   mbulletin --self-test
 
+REQUEST.ini is a bulletin request INI file with a single [Bulletin] section:
+
+  BlankFile = /srv/bbs/themes/default/text/bullet.ans
+  OutFile = /srv/bbs/themes/default/text/bullet3.ans
+
 Without --apply the new bulletin is only planned and no file is written.
-With --apply the tool validates the blank, refuses an existing target and writes
-the new bulletin file. The blank template stays byte-identical.
+With --apply the tool reads the blank template referenced by BlankFile, refuses
+an existing target and writes it to OutFile. The blank template stays
+byte-identical; the new bulletin file is the integrated text file for one width.
 
 The future .NET mysticd daemon and installer components call this tool through
 the same offline policy.

@@ -10,9 +10,9 @@ Generate Mystic BBS bulletins without changing the original blank template.
 
 ===== Technical basis =====
 
-Implemented in Free Pascal. A blank template (BlankFile) is copied to a target
-file while the template itself stays byte-identical. Writes are offline and
-explicit (`--apply`). Existing targets are refused.
+Implemented in Free Pascal. A blank template (BlankFile) is read from a request
+INI with `BlankFile` and `OutFile`; the template itself stays byte-identical.
+Writes are offline and explicit (`--apply`). Existing targets are refused.
 
 Distribution contains one executable and README.txt: ZIP for Windows, tar.gz for
 Linux. No separate manpage, MSI/DEB or system-wide PATH change.
