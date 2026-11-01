@@ -7,8 +7,8 @@ import tempfile
 
 exe = pathlib.Path(sys.argv[1]).resolve()
 T = b'T'
-T100 = T * 100
 THEMES = ('default', 'dbp_de')
+THEME_CODES = {'default': 'd', 'dbp_de': 'z'}
 
 
 def run(root, args, stdin=None):
@@ -22,22 +22,30 @@ def ini_text():
     return (
         '[default]\n'
         'BlankFile = blank/default/bullet.blank.ans\n'
+        'Coord1 = 1,2\n'
+        'Coord2 = 78,4\n'
         'BlankFileC132 = blank/default/bullet.blank.c132.ans\n'
+        'Coord1C132 = 1,2\n'
+        'Coord2C132 = 78,4\n'
         'BlankFileC160 = blank/default/bullet.blank.c160.ans\n'
+        'Coord1C160 = 1,2\n'
+        'Coord2C160 = 78,4\n'
         'BlankFileAsc = blank/default/bullet.blank.asc\n'
-        'Top = 2\n'
-        'Bottom = 4\n'
-        'Left = 1\n'
-        'Right = 1\n'
+        'Coord1Asc = 1,2\n'
+        'Coord2Asc = 78,4\n'
         '[dbp_de]\n'
         'BlankFile = blank/dbp_de/bullet.blank.ans\n'
+        'Coord1 = 2,2\n'
+        'Coord2 = 78,4\n'
         'BlankFileC132 = blank/dbp_de/bullet.blank.c132.ans\n'
+        'Coord1C132 = 3,2\n'
+        'Coord2C132 = 79,4\n'
         'BlankFileC160 = blank/dbp_de/bullet.blank.c160.ans\n'
+        'Coord1C160 = 2,2\n'
+        'Coord2C160 = 78,4\n'
         'BlankFileAsc = blank/dbp_de/bullet.blank.asc\n'
-        'Top = 2\n'
-        'Bottom = 4\n'
-        'Left = 0\n'
-        'Right = 2\n'
+        'Coord1Asc = 2,2\n'
+        'Coord2Asc = 78,4\n'
     )
 
 
@@ -46,8 +54,6 @@ def make_blank(path, code):
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_bytes(('\r\n'.join(lines) + '\r\n').encode())
 
-
-THEME_CODES = {'default': 'd', 'dbp_de': 'z'}
 
 with tempfile.TemporaryDirectory(prefix='mbulletin-test-') as directory:
     root = pathlib.Path(directory)
@@ -62,7 +68,7 @@ with tempfile.TemporaryDirectory(prefix='mbulletin-test-') as directory:
 
     # --- new: one TXT argument builds a bulletin in every theme and width ----
     text = root / 'one.txt'
-    text.write_bytes(T100 + b'\r\nMahlzeit\r\n')
+    text.write_bytes(T * 100 + b'\r\nMahlzeit\r\n')
     code, out, err = run(root, ['new', str(text)])
     assert code == 0, out + err
     for theme in THEMES:
@@ -73,21 +79,15 @@ with tempfile.TemporaryDirectory(prefix='mbulletin-test-') as directory:
     blank = (root / 'blank' / 'default' / 'bullet.blank.ans').read_bytes()
     assert blank == b'KEEPd0\r\nA1\r\nA2\r\nA3\r\nFOOTd0\r\n'
 
-    # default base .ans: title wraps into the 78-column area (80 - margins),
-    # the report fills Top..Bottom exactly, everything else is kept
+    # default: Coord1 = 1,2 / Coord2 = 78,4 -> report window rows 2..4, columns
+    # 1..78; the title wraps into 78+22 and everything outside stays identical
     rows = (root / 'blank' / 'default' / 'bullet1.ans').read_bytes().split(b'\r\n')
-    assert rows == [b'KEEPd0', b' ' + T * 78, b' ' + T * 22, b' Mahlzeit',
-                    b'FOOTd0', b'']
+    assert rows == [b'KEEPd0', T * 78, T * 22, b'Mahlzeit', b'FOOTd0', b'']
 
-    # the c132 variant has 130 columns: title fits, remaining rows pad up
-    rows = (root / 'blank' / 'default' / 'bullet1.c132.ans').read_bytes().split(b'\r\n')
-    assert rows == [b'KEEPd0', b' ' + T100, b' Mahlzeit', b' ', b'FOOTd0', b'']
-
-    # dbp_de has no left margin and keeps the full title in the wide variants
+    # dbp_de: Coord1 = 2,2 -> one leading margin column, one column narrower
     rows = (root / 'blank' / 'dbp_de' / 'bullet1.ans').read_bytes().split(b'\r\n')
-    assert rows == [b'KEEPz0', T * 78, T * 22, b'Mahlzeit', b'FOOTz0', b'']
-    rows = (root / 'blank' / 'dbp_de' / 'bullet1.c160.ans').read_bytes().split(b'\r\n')
-    assert rows == [b'KEEPz0', T100, b'Mahlzeit', b'', b'FOOTz0', b'']
+    assert rows == [b'KEEPz0', b' ' + T * 77, b' ' + T * 23, b' Mahlzeit',
+                    b'FOOTz0', b'']
 
     # --- new again: umlauts become ASCII in .asc and CP437 bytes in .ans -----
     text = root / 'two.txt'
@@ -102,12 +102,13 @@ with tempfile.TemporaryDirectory(prefix='mbulletin-test-') as directory:
     assert b'\xe1' in ans   # ß
     assert b'\x9a' in ans   # Ü
 
-    # --- list shows numbers plus the titles read from the report area --------
+    # --- list shows numbers plus the titles read from the report window ------
     code, out, err = run(root, ['list'])
     assert code == 0, out + err
     assert 'default:' in out
     assert 'dbp_de:' in out
     assert ('1: ' + T.decode() * 78) in out
+    assert ('1: ' + T.decode() * 77) in out
     assert '2: Titel zwei' in out
     assert 'Mahlzeit' not in out   # body lines are not titles
 
@@ -134,39 +135,39 @@ with tempfile.TemporaryDirectory(prefix='mbulletin-test-') as directory:
     code, out, err = run(root, ['new', str(text)])
     assert code == 0, out + err
     assert (root / 'blank' / 'default' / 'bullet3.ans').exists()
+    # short texts leave the trailing report rows blank (padding)
+    rows = (root / 'blank' / 'default' / 'bullet3.ans').read_bytes().split(b'\r\n')
+    assert rows == [b'KEEPd0', b'VIER', b'Vierter Text', b'', b'FOOTd0', b'']
     code, out, err = run(root, ['delete'], stdin=b'2\nj\n')
     assert code == 0, out + err
     assert not (root / 'blank' / 'default' / 'bullet3.ans').exists()
     rows = (root / 'blank' / 'default' / 'bullet2.ans').read_bytes().split(b'\r\n')
-    assert rows[1] == b' VIER'
+    assert rows[1] == b'VIER'
     code, out, err = run(root, ['list'])
     assert '2: VIER' in out
     assert '3: VIER' not in out
 
-    # --- scrolled bulletin: text longer than the report area extends it -----
+    # --- scrolled bulletin: text longer than the report window extends it ----
     text = root / 'wide.txt'
     text.write_bytes(T * 260 + b'\r\nMahlzeit\r\nbye\r\n')
     code, out, err = run(root, ['new', str(text)])
     assert code == 0, out + err
-    # default c132 (130 text columns): two title lines + two body lines beat
-    # the three area rows, so the footer shifts down one line
-    rows = (root / 'blank' / 'default' / 'bullet3.c132.ans').read_bytes().split(b'\r\n')
-    assert rows == [b'KEEPd0', b' ' + T * 130, b' ' + T * 130, b' Mahlzeit',
-                    b' bye', b'FOOTd0', b'']
+    # 260 text bytes wrap into 78+78+78+26; with the two body lines the report
+    # needs six rows instead of three, so the footer shifts down three rows
+    rows = (root / 'blank' / 'default' / 'bullet3.ans').read_bytes().split(b'\r\n')
+    assert rows == [b'KEEPd0', T * 78, T * 78, T * 78, T * 26, b'Mahlzeit',
+                    b'bye', b'FOOTd0', b'']
     # the dbp_de c132 footer starts with an absolute ANSI cursor position and
-    # its row is renumbered while the bulletin grows
+    # its row is renumbered by the same delta (two leading margin columns from
+    # Coord1C132 = 3)
     rows = (root / 'blank' / 'dbp_de' / 'bullet3.c132.ans').read_bytes().split(b'\r\n')
-    assert rows == [b'KEEPz0', T * 130, T * 130, b'Mahlzeit',
-                    b'bye', b'\x1b[6;1HFOOTz0', b'']
-    code, out, err = run(root, ['new', str(text)])
-    assert code == 0, out + err
-    rows = (root / 'blank' / 'default' / 'bullet4.c132.ans').read_bytes().split(b'\r\n')
-    assert rows[1] == b' ' + T * 130
+    assert rows == [b'KEEPz0', b'  ' + T * 77, b'  ' + T * 77, b'  ' + T * 77,
+                    b'  ' + T * 29, b'  Mahlzeit', b'  bye', b'\x1b[8;1HFOOTz0', b'']
 
     # --- themes with diverging bulletin counts are refused -------------------
     (root / 'blank' / 'default' / 'bullet6.ans').write_bytes(b'Fake\r\n')
     code, out, err = run(root, ['new', str(text)])
-    assert code != 0 and 'out of sync' in out + err, (code, out + err)
+    assert code != 0 and 'out of sync' in out + err
     code, out, err = run(root, ['delete'], stdin=b'3\nj\n')
     assert code != 0 and 'out of sync' in out + err
     (root / 'blank' / 'default' / 'bullet6.ans').unlink()

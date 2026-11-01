@@ -43,19 +43,23 @@ relative blank template paths are resolved.
 
 ## mbulletin.ini
 
-One section per theme, each with the four blank template keys and the report
-area boundaries:
+One section per theme, each with the four blank template keys and a
+Mystic-style coordinate pair per template size:
 
 ```ini
 [default]
-BlankFile    = blank/default/bullet.blank.ans
+BlankFile     = blank/default/bullet.blank.ans
+Coord1        = 3,5
+Coord2        = 76,18
 BlankFileC132 = blank/default/bullet.blank.c132.ans
+Coord1C132    = 4,6
+Coord2C132    = 128,18
 BlankFileC160 = blank/default/bullet.blank.c160.ans
-BlankFileAsc = blank/default/bullet.blank.asc
-Top = 6
-Bottom = 18
-Left = 2
-Right = 2
+Coord1C160    = 4,6
+Coord2C160    = 156,18
+BlankFileAsc  = blank/default/bullet.blank.asc
+Coord1Asc     = 3,5
+Coord2Asc     = 76,18
 
 [dbp_de]
 ...
@@ -66,16 +70,15 @@ Right = 2
   produced (`bullet1.ans`, `bullet1.c132.ans`, `bullet1.asc`, ...). The report
   is written into the directory of the blank template, which therefore must be
   the theme text directory.
-- `Top`/`Bottom` are the first and last template lines of the report area; only
-  these lines are replaced with the title plus the wrapped text. Everything
-  outside stays byte-identical and the template itself is never modified.
-- `Left`/`Right` are the column margins inside the report area. The text width
-  is the variant width minus both margins (base = 80 columns, `.c132` = 132,
-  `.c160` = 160).
+- `Coord1`/`Coord2` follow Mystic's own INI convention ("X,Y" pairs, optional
+  attribute value ignored): `Coord1` is the top/left corner of the report
+  window, `Coord2` the bottom/right one. Each template size has its own pair;
+  `Coord2 X` must fit the template width (80 for the base and `.asc`
+  templates, 132 and 160 for the wide ones).
 - Filling order: first line of the TXT is the title, then the body; silent
   hard-wrapping continues under lines.
-- The report may overflow the area: Mystic scrolls the extra lines of a
-  bulletin. When the text needs more lines than `Top..Bottom` offers, the
+- The report may overflow the window: Mystic scrolls the extra lines of a
+  bulletin. When the text needs more rows than the window offers, the
   remaining template lines shift down; if a shifted line starts with an
   absolute ANSI cursor position (`ESC[r;cH`, `ESC[rf`, `ESC[rd`) the row
   number is renumbered so nothing overlaps.

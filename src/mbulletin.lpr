@@ -21,11 +21,12 @@ type
         Directory: string;       // blank directory with trailing delimiter
         Tail: string;            // filename part after '.blank', e.g. '.c132.ans'
         Width: Integer;
+        Top, Bottom: Integer;    // report rows, 1-based
+        LeftX, RightX: Integer;  // report column window, 1-based (Mystic style)
     end;
 
     TTheme = record
         Name: string;
-        Top, Bottom, LeftMargin, RightMargin: Integer;
         Variants: array of TVariant;
     end;
 
@@ -60,6 +61,11 @@ const
 
     VariantKeys: array[0..3] of string = ('BlankFile', 'BlankFileC132', 'BlankFileC160', 'BlankFileAsc');
     VariantTails: array[0..3] of string = ('.ans', '.c132.ans', '.c160.ans', '.asc');
+
+    { coordinate keys follow the BlankFile keys: plain Coord1/Coord2 belong to
+      the base .ans template, the suffixed ones to the other variants }
+    Coord1Keys: array[0..3] of string = ('Coord1', 'Coord1C132', 'Coord1C160', 'Coord1Asc');
+    Coord2Keys: array[0..3] of string = ('Coord2', 'Coord2C132', 'Coord2C160', 'Coord2Asc');
 
 { --------------------------------------------------------------------- }
 { Path helpers                                                          }
@@ -477,7 +483,7 @@ begin
         if FileExists(Path) then begin
             Data := ReadFileBytes(Path);
             Lines := SplitLines(Data);
-            for J := Theme.Top to Theme.Bottom do
+            for J := Theme.Variants[I].Top to Theme.Variants[I].Bottom do
                 if J <= Length(Lines.Values) then begin
                     Line := TrimBlanks(StripDisplayCodes(Lines.Values[J - 1]));
                     if Line <> '' then begin
@@ -494,13 +500,40 @@ end;
 { INI loading                                                           }
 { --------------------------------------------------------------------- }
 
+{ Parse a Mystic-style "X,Y" (or "X,Y,A", the attribute is ignored) pair that
+  names one report corner. X is the column, Y is the row. }
+function ParseCoordPair(const Section, Key, Value: string; out X, Y: Integer): Boolean;
+var
+    P, Comma, Second: Integer;
+    First, Rest: string;
+begin
+    Result := False;
+    Comma := Pos(',', Value);
+    if Comma < 2 then
+        Exit;
+    First := Copy(Value, 1, Comma - 1);
+    Rest := Copy(Value, Comma + 1, MaxInt);
+    Comma := Pos(',', Rest);
+    if Comma > 0 then
+        Second := StrToIntDef(TrimBlanks(Copy(Rest, 1, Comma - 1)), -1)
+    else
+        Second := StrToIntDef(TrimBlanks(Rest), -1);
+    P := StrToIntDef(TrimBlanks(First), -1);
+    if (P < 1) or (Second < 1) then
+        Exit;
+    X := P;
+    Y := Second;
+    Result := True;
+end;
+
 function LoadThemes(const IniPath: string): TThemeArr;
 var
     Ini: TIniFile;
     Sections: TStringList;
     Theme: TTheme;
-    Section, BlankPath, BlankName, Tail: string;
+    Section, BlankPath, BlankName, Tail, CoordValue: string;
     I, K, E: Integer;
+    Coord1X, Coord1Y, Coord2X, Coord2Y: Integer;
 begin
     Result := nil;
     if not FileExists(IniPath) then
@@ -513,16 +546,6 @@ begin
         for I := 0 to Sections.Count - 1 do begin
             Section := Sections[I];
             Theme.Name := Section;
-            Theme.Top := Ini.ReadInteger(Section, 'Top', 0);
-            Theme.Bottom := Ini.ReadInteger(Section, 'Bottom', 0);
-            Theme.LeftMargin := Ini.ReadInteger(Section, 'Left', -1);
-            Theme.RightMargin := Ini.ReadInteger(Section, 'Right', -1);
-            if (Theme.Top < 1) or (Theme.Bottom < Theme.Top) then
-                raise Exception.Create('Theme "' + Section +
-                    '" has invalid Top/Bottom report lines.');
-            if (Theme.LeftMargin < 0) or (Theme.RightMargin < 0) then
-                raise Exception.Create('Theme "' + Section +
-                    '" has invalid Left/Right report margins.');
             SetLength(Theme.Variants, Length(VariantKeys));
             for K := 0 to Length(VariantKeys) - 1 do begin
                 BlankPath := Ini.ReadString(Section, VariantKeys[K], '');
@@ -538,19 +561,44 @@ begin
                     raise Exception.Create('Theme "' + Section + '": ' + VariantKeys[K] +
                         ' must point to a *' + VariantTails[K] + ' template, but got "' +
                         BlankName + '" (tail ' + Tail + ').');
+                CoordValue := Ini.ReadString(Section, Coord1Keys[K], '');
+                if not ParseCoordPair(Section, Coord1Keys[K], CoordValue,
+                        Coord1X, Coord1Y) then
+                    raise Exception.Create('Theme "' + Section +
+                        '" needs a Mystic-style ' + Coord1Keys[K] + ' = X,Y report corner.');
+                CoordValue := Ini.ReadString(Section, Coord2Keys[K], '');
+                if not ParseCoordPair(Section, Coord2Keys[K], CoordValue,
+                        Coord2X, Coord2Y) then
+                    raise Exception.Create('Theme "' + Section +
+                        '" needs a Mystic-style ' + Coord2Keys[K] + ' = X,Y report corner.');
                 Theme.Variants[K].KeyName := VariantKeys[K];
                 Theme.Variants[K].BlankPath := BlankPath;
                 Theme.Variants[K].Directory := IncludeTrailingPathDelimiter(
                     ExtractFilePath(BlankPath));
                 Theme.Variants[K].Tail := Tail;
                 Theme.Variants[K].Width := TailWidth(Tail);
-                E := Theme.Variants[K].Width - Theme.LeftMargin - Theme.RightMargin;
-                if E < 1 then
+                { Coord1 is the top/left corner, Coord2 the bottom/right corner }
+                Theme.Variants[K].Top := Coord1Y;
+                Theme.Variants[K].Bottom := Coord2Y;
+                Theme.Variants[K].LeftX := Coord1X;
+                Theme.Variants[K].RightX := Coord2X;
+                if (Theme.Variants[K].Top < 1) or (Theme.Variants[K].Bottom <
+                        Theme.Variants[K].Top) then
+                    raise Exception.Create('Theme "' + Section + '", ' +
+                        Coord1Keys[K] + '/' + Coord2Keys[K] +
+                        ': the report rows must be >= 1 and Coord1 Y <= Coord2 Y.');
+                if (Theme.Variants[K].LeftX < 1) or (Theme.Variants[K].RightX <
+                        Theme.Variants[K].LeftX) then
+                    raise Exception.Create('Theme "' + Section + '", ' +
+                        Coord1Keys[K] + '/' + Coord2Keys[K] +
+                        ': the report columns must be >= 1 and Coord1 X <= Coord2 X.');
+                if Theme.Variants[K].RightX > Theme.Variants[K].Width then
                     raise Exception.Create('Theme "' + Section + '": variant ' +
-                        Theme.Variants[K].Tail + ' leaves no room for text (width ' +
-                        IntToStr(Theme.Variants[K].Width) + ', Left ' +
-                        IntToStr(Theme.LeftMargin) + ', Right ' +
-                        IntToStr(Theme.RightMargin) + ').');
+                        Theme.Variants[K].Tail + ' (width ' +
+                        IntToStr(Theme.Variants[K].Width) + ') cannot host the ' +
+                        Coord1Keys[K] + '..' + Coord2Keys[K] + ' column window ' +
+                        IntToStr(Theme.Variants[K].LeftX) + '..' +
+                        IntToStr(Theme.Variants[K].RightX) + '.');
                 if not FileExists(BlankPath) then
                     raise Exception.Create('Blank template not found: ' + BlankPath);
             end;
@@ -658,42 +706,43 @@ begin
 
     for I := 0 to High(Themes) do begin
         Theme := Themes[I];
-        Height := Theme.Bottom - Theme.Top + 1;
-        if Height < 1 then
-            raise Exception.Create('Theme "' + Theme.Name + '": empty report area.');
         for K := 0 to High(Theme.Variants) do begin
+            Height := Theme.Variants[K].Bottom - Theme.Variants[K].Top + 1;
+            if Height < 1 then
+                raise Exception.Create('Theme "' + Theme.Name + '": empty report area.');
             BlankData := ReadFileBytes(Theme.Variants[K].BlankPath);
             BlankLines := SplitLines(BlankData);
-            if Length(BlankLines.Values) < Theme.Bottom then
+            if Length(BlankLines.Values) < Theme.Variants[K].Bottom then
                 raise Exception.Create('Theme "' + Theme.Name + '", ' +
                     Theme.Variants[K].Tail + ': blank template is shorter than ' +
-                    'Bottom (' + IntToStr(Theme.Bottom) + ' lines): ' +
+                    'Bottom (' + IntToStr(Theme.Variants[K].Bottom) + ' lines): ' +
                     Theme.Variants[K].BlankPath);
             VariantText := Copy(TextData, 0, Length(TextData));
             TranslateGerman(VariantText, VariantKeys[3] = Theme.Variants[K].KeyName);
             VariantLines := SplitLines(VariantText);
 
-            { fit every text line (title first) into the report area; if the
-              text needs more lines than the area offers the bulletin grows
-              and the remaining template lines shift down (they scroll along
-              in Mystic, absolute cursor rows are renumbered) }
+            { fit every text line (title first) into the Coord1..Coord2 report
+              window; if the text needs more rows than the window offers the
+              bulletin grows and the remaining template lines shift down (they
+              scroll along in Mystic, absolute cursor rows are renumbered) }
             ReportLines := nil;
             for ChunkIndex := 0 to High(VariantLines.Values) do begin
                 Wrapped := WrapLine(VariantLines.Values[ChunkIndex],
-                    Theme.Variants[K].Width - Theme.LeftMargin - Theme.RightMargin);
+                    Theme.Variants[K].RightX - Theme.Variants[K].LeftX + 1);
                 for N := 0 to High(Wrapped) do
-                    AppendLine(ReportLines, StringOfChar(' ', Theme.LeftMargin) + Wrapped[N]);
+                    AppendLine(ReportLines,
+                        StringOfChar(' ', Theme.Variants[K].LeftX - 1) + Wrapped[N]);
             end;
             while Length(ReportLines) < Height do
-                AppendLine(ReportLines, StringOfChar(' ', Theme.LeftMargin));
+                AppendLine(ReportLines, StringOfChar(' ', Theme.Variants[K].LeftX - 1));
 
             { keep everything of the template outside the report area }
             Wrapped := nil;
-            for N := 1 to Theme.Top - 1 do
+            for N := 1 to Theme.Variants[K].Top - 1 do
                 AppendLine(Wrapped, BlankLines.Values[N - 1]);
             for N := 0 to High(ReportLines) do
                 AppendLine(Wrapped, ReportLines[N]);
-            for N := Theme.Bottom + 1 to Length(BlankLines.Values) do begin
+            for N := Theme.Variants[K].Bottom + 1 to Length(BlankLines.Values) do begin
                 if Length(ReportLines) > Height then
                     AppendLine(Wrapped, ShiftCursorPosition(BlankLines.Values[N - 1],
                         Length(ReportLines) - Height))
@@ -800,7 +849,6 @@ var
     Lines: TLines;
     Wrapped: TStringArr;
     Data: TBytes;
-    I: Integer;
 begin
     if SHA256Bytes(BytesOf('')) <> 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855' then
         raise Exception.Create('SHA-256 empty-message self-test failed.');
@@ -873,8 +921,8 @@ begin
     Writeln('  mbulletin --self-test       run the built-in checks');
     Writeln;
     Writeln('mbulletin reads its theme sections from mbulletin.ini in the tool directory.');
-    Writeln('Each theme section lists its blank templates and the Top/Bottom/Left/Right');
-    Writeln('boundaries of the report area; see the README for a sample.');
+    Writeln('Each theme section lists its blank templates and the Mystic-style');
+    Writeln('Coord1/Coord2 report corners per template size; see the README for a');
 end;
 
 begin

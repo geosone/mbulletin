@@ -27,13 +27,17 @@ mbulletin.ini sits next to the tool and has one section per theme:
 
   [default]
   BlankFile     = blank/default/bullet.blank.ans
+  Coord1        = 3,5
+  Coord2        = 76,18
   BlankFileC132 = blank/default/bullet.blank.c132.ans
+  Coord1C132    = 4,6
+  Coord2C132    = 128,18
   BlankFileC160 = blank/default/bullet.blank.c160.ans
+  Coord1C160    = 4,6
+  Coord2C160    = 156,18
   BlankFileAsc  = blank/default/bullet.blank.asc
-  Top = 6
-  Bottom = 18
-  Left = 2
-  Right = 2
+  Coord1Asc     = 3,5
+  Coord2Asc     = 76,18
 
 Blank template names contain `.blank`; the filename tail (`.ans`, `.c132.ans`,
 `.c160.ans`, `.asc`) decides which bulletin file is produced (`bullet1.ans`,
@@ -41,16 +45,18 @@ Blank template names contain `.blank`; the filename tail (`.ans`, `.c132.ans`,
 directory of the referenced blank template, which must be the theme text
 directory. Paths are relative to the tool directory.
 
-`Top`/`Bottom` are the first and last template lines of the report area; the
-title (first TXT line) plus the wrapped text replace exactly these lines,
-everything outside stays byte-identical. `Left`/`Right` are the column margins;
-the text width is the variant width minus both margins (base 80, `.c132` 132,
-`.c160` 160). Text that needs more lines than the area offers extends the
-bulletin: the remaining template lines shift down, absolute ANSI cursor rows
-are renumbered and Mystic scrolls through the extra lines. German umlauts are
-stored as CP437 bytes in `.ans` and spelled out (ae, oe, ue, ss) in the `.asc`
-fallback. A ready `mbulletin.ini.example` ships in the archive; rename it to
-`mbulletin.ini` and adjust the paths.
+`Coord1`/`Coord2` follow Mystic's own INI convention (X,Y pairs, attribute
+value allowed and ignored): `Coord1` is the top/left corner of the report
+window, `Coord2` the bottom/right one, per template size. The title (first TXT
+line) plus the wrapped text replace exactly these rows, everything outside
+stays byte-identical. The text width is the column window (Coord2 X - Coord1 X
++ 1); the row window is Coord2 Y - Coord1 Y + 1. Text that needs more rows
+than the window offers extends the bulletin: the remaining template lines
+shift down, absolute ANSI cursor rows are renumbered and Mystic scrolls
+through the extra lines. German umlauts are stored as CP437 bytes in `.ans`
+and spelled out (ae, oe, ue, ss) in the `.asc` fallback. A ready
+`mbulletin.ini.example` ships in the archive; rename it to `mbulletin.ini`
+and adjust the paths.
 
 `delete` confirms with J/N, then renames the following bulletins in every
 theme (1,2,3,4, delete 2 -> 3 becomes 2, 4 becomes 3); renaming preserves the

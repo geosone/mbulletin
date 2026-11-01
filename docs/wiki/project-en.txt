@@ -14,24 +14,26 @@ is implemented.
 
 Implemented in Free Pascal. `mbulletin.ini` sits next to the tool and holds one
 section per theme with the four blank templates (`BlankFile`, `BlankFileC132`,
-`BlankFileC160`, `BlankFileAsc`) and the report boundaries
-`Top`/`Bottom`/`Left`/`Right`. Blank names contain `.blank`; the filename tail
-decides which bulletin file is produced (`bullet1.ans`, `bullet1.c132.ans`,
-`bullet1.asc`, ...). Bulletins are written into the directory of the referenced
-template, which is the theme text directory.
+`BlankFileC160`, `BlankFileAsc`) and a Mystic-style coordinate pair
+`Coord1`/`Coord2 = X,Y` per template size (top/left and bottom/right corner of
+the report window, attribute value ignored). Blank names contain `.blank`; the
+filename tail decides which bulletin file is produced (`bullet1.ans`,
+`bullet1.c132.ans`, `bullet1.asc`, ...). Bulletins are written into the
+directory of the referenced template, which is the theme text directory.
 
 `new` takes the text file as its only argument; the first line becomes the
-bulletin title and the theme report boundaries define the size of the text
-area. Every width variant is created in one run, German umlauts are stored as
-CP437 bytes in `.ans` and spelled out in `.asc`. Text that needs more lines
-than the report offers extends the bulletin: the remaining template lines
-shift down, leading absolute ANSI cursor rows are renumbered and Mystic
-scrolls through the extra lines. `list` shows the bulletins with the titles
-from the report area, `delete` asks interactively (J/N), removes the chosen
-bulletin in every theme and renumbers the following ones (renaming preserves
-the mtime, so Mystic does not flag them as new). Writes are offline; existing
-files are never overwritten and templates stay byte-identical. A sample
-`mbulletin.ini.example` ships in every archive and in the sources.
+bulletin title and the coordinate window of the respective template size
+defines the size of the text area. Every width variant is created in one run,
+German umlauts are stored as CP437 bytes in `.ans` and spelled out in `.asc`.
+Text that needs more rows than the window offers extends the bulletin: the
+remaining template lines shift down, leading absolute ANSI cursor rows are
+renumbered and Mystic scrolls through the extra lines. `list` shows the
+bulletins with the titles from the report area, `delete` asks interactively
+(J/N), removes the chosen bulletin in every theme and renumbers the following
+ones (renaming preserves the mtime, so Mystic does not flag them as new).
+Writes are offline; existing files are never overwritten and templates stay
+byte-identical. A sample `mbulletin.ini.example` ships in every archive and in
+the sources.
 
 Distribution contains one executable and README.txt: ZIP for Windows, tar.gz for
 Linux. No separate manpage, MSI/DEB or system-wide PATH change.

@@ -12,27 +12,28 @@ ist umgesetzt.
 
 ===== Technische Grundlage =====
 
-Die Implementierung verwendet Free Pascal. `mbulletin.ini` liegt neben dem Tool
+Die Implementierung verwendet Free Pascal. `mbulletin.ini` liegt neben dem Werk
 und enthält je Theme einen Abschnitt mit den vier Blank-Vorlagen
-(`BlankFile`, `BlankFileC132`, `BlankFileC160`, `BlankFileAsc`) und den
-Bericht-Grenzen `Top`/`Bottom`/`Left`/`Right`. Vorlagennamen enthalten `.blank`;
-der Namensrest bestimmt die erzeugte Bulletin-Datei (`bullet1.ans`,
-`bullet1.c132.ans`, `bullet1.asc`, ...). geschrieben wird in das Verzeichnis der
-Vorlage, also das text/-Verzeichnis des Themes.
+(`BlankFile`, `BlankFileC132`, `BlankFileC160`, `BlankFileAsc`) und je
+Template-Größe einem Mystic-Stil-Paar `Coord1`/`Coord2 = X,Y` (Eckpunkt
+oben/links bzw. unten/rechts, das Attribut wird ignoriert). Vorlagennamen
+enthalten `.blank`; der Namensrest bestimmt die erzeugte Bulletin-Datei
+(`bullet1.ans`, `bullet1.c132.ans`, `bullet1.asc`, ...). Geschrieben wird in
+das Verzeichnis der Vorlage, also das text/-Verzeichnis des Themes.
 
 `new` bekommt als einziges Argument die Textdatei; ihre erste Zeile wird der
-Bulletin-Titel, die Bericht-Grenzen des Themes bestimmen Breite und Höhe des
-Textbereichs. Alle Limit-Varianten werden gleichzeitig erzeugt, die deutschen
-Umlaute landen als CP437-Bytes in `.ans` und ausgeschrieben in `.asc`. Braucht
-der Text mehr Zeilen als der Bericht bietet, wächst das Bulletin: die
-folgenden Vorlagenzeilen rutschen nach unten, führende ANSI-Cursorpositionen
-werden neu nummeriert und Mystic scrollt. `list` zeigt die Bulletins mit den
-Titeln aus der Berichtzone, `delete` fragt interaktiv (J/N), löscht das
-gewählte Bulletin in allen Themes und nummeriert die folgenden Bulletin neu
-(Umbenennen erhält die mtime, Mystic zeigt sie nicht als neu).
-Schreibzugriffe sind offline; bestehende Dateien werden nie überschrieben und
-die Vorlagen bleiben byte-identisch. Eine Beispieldatei `mbulletin.ini.example`
-liegt in jedem Archiv und in den Quellen.
+Bulletin-Titel, das Coord-Fenster der jeweiligen Template-Größe bestimmt
+Breite und Höhe des Textbereichs. Alle Varianten werden gleichzeitig erzeugt,
+die deutschen Umlaute landen als CP437-Bytes in `.ans` und ausgeschrieben in
+`.asc`. Braucht der Text mehr Zeilen als das Fenster bietet, wächst das
+Bulletin: die folgenden Vorlagenzeilen rutschen nach unten, führende
+ANSI-Cursorpositionen werden neu nummeriert und Mystic scrollt. `list` zeigt
+die Bulletins mit den Titeln aus der Berichtzone, `delete` fragt interaktiv
+(J/N), löscht das gewählte Bulletin in allen Themes und nummeriert die
+folgenden Bulletin neu (Umbenennen erhält die mtime, Mystic zeigt sie nicht
+als neu). Schreibzugriffe sind offline; bestehende Dateien werden nie
+überschrieben und die Vorlagen bleiben byte-identisch. Eine Beispieldatei
+`mbulletin.ini.example` liegt in jedem Archiv und in den Quellen.
 
 Die Auslieferung besteht aus einer ausführbaren Datei und README.txt: ZIP für
 Windows, tar.gz für Linux. Keine separate Manpage, kein MSI/DEB und kein

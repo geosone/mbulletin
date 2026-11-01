@@ -10,23 +10,36 @@
 ; into the same directory as the referenced blank template, so the blank
 ; directory must be the theme text directory. Relative paths are resolved
 ; against the directory that contains mbulletin.ini / the tool.
+;
+; Coord1/Coord2 use Mystic's own "X,Y" (optionally "X,Y,A", the attribute is
+; ignored) convention: Coord1 is the top/left corner of the report window and
+; Coord2 the bottom/right one. Each template size gets its own pair; make sure
+; Coord2 X fits the template width (80 for the base and .asc templates).
 
 [default]
 BlankFile     = themes/default/text/bullet.blank.ans
+Coord1        = 3,5
+Coord2        = 76,18
 BlankFileC132 = themes/default/text/bullet.blank.c132.ans
+Coord1C132    = 4,6
+Coord2C132    = 128,18
 BlankFileC160 = themes/default/text/bullet.blank.c160.ans
+Coord1C160    = 4,6
+Coord2C160    = 156,18
 BlankFileAsc  = themes/default/text/bullet.blank.asc
-Top = 4
-Bottom = 18
-Left = 2
-Right = 2
+Coord1Asc     = 3,5
+Coord2Asc     = 76,18
 
 [dbp_de]
 BlankFile     = themes/dbp_de/text/bullet.blank.ans
+Coord1        = 3,5
+Coord2        = 76,18
 BlankFileC132 = themes/dbp_de/text/bullet.blank.c132.ans
+Coord1C132    = 4,6
+Coord2C132    = 128,18
 BlankFileC160 = themes/dbp_de/text/bullet.blank.c160.ans
+Coord1C160    = 4,6
+Coord2C160    = 156,18
 BlankFileAsc  = themes/dbp_de/text/bullet.blank.asc
-Top = 4
-Bottom = 18
-Left = 2
-Right = 2
+Coord1Asc     = 3,5
+Coord2Asc     = 76,18

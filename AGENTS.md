@@ -13,10 +13,11 @@ Bulletin generation is offline only. The blank templates are never modified, the
 bulletin files land in the blank directory of each theme, and one `new` run
 creates the bulletin in every theme. The theme sections come from mbulletin.ini
 next to the tool (a mbulletin.ini.example ships in the archives) and must define
-all four blanks and Top/Bottom/Left/Right. Unknown, invalid or oversized
-templates are refused. The only argument of `new` is the text file, whose first
-line is the title. Text that needs more report lines than the area offers
-extends the bulletin and shifts the following template lines down (leading
-absolute ANSI cursor rows are renumbered). `list` shows the titles from
-the report area of the .ans files, `delete` asks interactively (J/N) and
-renumbers the remaining bulletins in every theme.
+all four blanks plus Mystic-style Coord1/Coord2 report corners per template
+size. Unknown, invalid or oversized templates are refused. The only argument of
+`new` is the text file, whose first line is the title. Text that needs more
+report rows than the window offers extends the bulletin and shifts the
+following template lines down (leading absolute ANSI cursor rows are
+renumbered). `list` shows the titles from the report area of the .ans files,
+`delete` asks interactively (J/N) and renumbers the remaining bulletins in
+every theme.
